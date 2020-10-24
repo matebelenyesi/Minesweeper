@@ -3,6 +3,11 @@
 #include <cstdlib> // for std::rand() and std::srand()
 #include <ctime> // for std::time()
 #include <SFML/Audio.hpp>
+#include <cppconn/driver.h>
+#include <cppconn/exception.h>
+#include <cppconn/resultset.h>
+#include <cppconn/statement.h>
+#include <cppconn/prepared_statement.h>
 #include "PlayerState.h"
 #include "Timer.h"
 
@@ -17,6 +22,7 @@ private:
 	int levelYSize;
 	int bombCount = 10;
 	int flagCount =0;
+	int hardness = 1;
 	PlayerState playerState = PlayerState::NOT_STARTED;
 	std::vector<std::tuple<int, int>> bombPositions;
 	std::vector<std::tuple<int, int>> freePositions;
@@ -34,9 +40,15 @@ private:
 	sf::SoundBuffer removeFlagSoundBuffer;
 	sf::Sound removeFlagSound;
 
+	sql::Connection *connection;
+	std::vector<double> highScores;
+
+	double getHighscore(int level);
+	void updateHighscore(int level, double score);
+
 
 public:
-	GameModel();
+	GameModel(sql::Connection *con);
 
 	Level getLevel();
 	int getLevelXSize();
@@ -52,6 +64,11 @@ public:
 	Timer getTimer();
 
 	void newGame(int x);
+
+	std::vector<double> getHighscores();
+	int getHardness();
+
+	sql::Connection* getConnection();
 
 	~GameModel();
 };

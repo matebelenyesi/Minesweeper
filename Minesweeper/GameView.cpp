@@ -4,10 +4,11 @@
 #include <string>
 #include <sstream>
 #include <iomanip> 
-
+#include <memory>
 
 GameView::GameView()
 {
+
 }
 
 GameView::GameView(sf::RenderWindow *gameWindow)
@@ -19,16 +20,76 @@ GameView::GameView(sf::RenderWindow *gameWindow)
 		std::cout << "Error to load arial.ttf font-style";
 	}
 
+	loadTextures();
+
 	beginner.setFillColor(sf::Color::Blue);
+	beginner.setSize(sf::Vector2f(175, 50));
+	beginnerTexture.loadFromFile("beginner.png");
+	beginner.setTexture(&beginnerTexture);
+
 	intermediate.setFillColor(sf::Color::Green);
+	intermediate.setSize(sf::Vector2f(175, 50));
+	intermediateTexture.loadFromFile("intermediate.png");
+	intermediate.setTexture(&intermediateTexture);
+
 	hard.setFillColor(sf::Color::Red);
+	hard.setSize(sf::Vector2f(175, 50));
+	hardTexture.loadFromFile("hard.png");
+	hard.setTexture(&hardTexture);
+
+	leftBombsText.setFont(font);
+	leftBombsText.setCharacterSize(18);
+
+	timeText.setFont(font);
+	timeText.setCharacterSize(18);
 
 	endText.setString("");
 	endText.setFillColor(sf::Color::White);
 	endText.setFont(font);
-	timeText.setFont(font);
+	endText.setCharacterSize(18);
+
+	highScoreText.setFont(font);
+	highScoreText.setFillColor(sf::Color::Yellow);
+	highScoreText.setCharacterSize(18);
 }
 
+void GameView::loadTextures()
+{
+	sf::Texture texture;
+
+	for (int i = 0; i < 8; ++i)
+	{
+		std::ostringstream os;
+		os << i + 1 << ".png";
+
+		if (!texture.loadFromFile(os.str()))
+		{
+			std::cout << "Can't load texture: "<< os.str() << std::endl;
+		}
+
+		numberTextures.push_back(texture);
+	}
+
+	if (!flagTexture.loadFromFile("flag.png"))
+	{
+		std::cout << "Can't load texture: " << "flag.png" << std::endl;
+	}
+
+	if (!bombTexture.loadFromFile("bomb.png"))
+	{
+		std::cout << "Can't load texture: " << "bomb.png" << std::endl;
+	}
+
+	if (!wrongbombTexture.loadFromFile("wrongbomb.png"))
+	{
+		std::cout << "Can't load texture: " << "wrongbomb.png" << std::endl;
+	}
+
+	if (!actualbombTexture.loadFromFile("actualbomb.png"))
+	{
+		std::cout << "Can't load texture: " << "actualbomb.png" << std::endl;
+	}
+}
 
 void GameView::draw(GameModel *gameModel)
 {
@@ -42,109 +103,32 @@ void GameView::draw(GameModel *gameModel)
 			sf::RectangleShape rectangle;
 			rectangle.setSize(sf::Vector2f(25.f, 25.f));
 			rectangle.setPosition(sf::Vector2f(25.f * j, 25.f * i));
-			sf::Texture texture;
 
 			switch (level[i][j])
 			{
 			case 0:
 				rectangle.setFillColor(sf::Color(169, 169, 169));
 				break;
-			case 1:
-				//rectangle.setFillColor(sf::Color::Blue);
-
-				if (!texture.loadFromFile("1.png"))
-				{
-					std::cout << "Wrong";
-				}
-
-				rectangle.setTexture(&texture);
+			case 1: case 2: case 3: case 4: case 5: case 6: case 7: case 8:
+				rectangle.setTexture(&numberTextures[level[i][j]-1]);
 				break;
-			case 2:
-				if (!texture.loadFromFile("2.png"))
-				{
-					std::cout << "Wrong";
-				}
-
-				rectangle.setTexture(&texture);
+			case 9: //Flag
+				rectangle.setTexture(&flagTexture);
 				break;
-			case 3:
-				if (!texture.loadFromFile("3.png"))
-				{
-					std::cout << "Wrong";
-				}
-
-				rectangle.setTexture(&texture);
+			case 10: //Bomb
+				rectangle.setTexture(&bombTexture);
 				break;
-			case 4:
-				if (!texture.loadFromFile("4.png"))
-				{
-					std::cout << "Wrong";
-				}
-
-				rectangle.setTexture(&texture);
-				break;
-			case 5:
-				if(!texture.loadFromFile("5.png"))
-				{
-					std::cout << "Wrong";
-				}
-
-				rectangle.setTexture(&texture);
-				break;
-			case 6:
-				if (!texture.loadFromFile("6.png"))
-				{
-					std::cout << "Wrong";
-				}
-				rectangle.setTexture(&texture);
-				break;
-			case 7:
-				if (!texture.loadFromFile("7.png"))
-				{
-					std::cout << "Wrong";
-				}
-				rectangle.setTexture(&texture);
-				break;
-			case 8:
-				if (!texture.loadFromFile("8.png"))
-				{
-					std::cout << "Wrong";
-				}
-				rectangle.setTexture(&texture);
-				break;
-			case 9:
-				if (!texture.loadFromFile("flag.png"))
-				{
-					std::cout << "Wrong";
-				}
-				rectangle.setTexture(&texture);
-				break;
-			case 10:
-				if (!texture.loadFromFile("bomb.png"))
-				{
-					std::cout << "Wrong";
-				}
-				rectangle.setTexture(&texture);
-				break;
-			case 11:
+			case 11: //Unclicked filed with bomb
 				rectangle.setFillColor(sf::Color(107, 107, 107));
 				break;
-			case 12:
+			case 12: //Unclicked field without bomb
 				rectangle.setFillColor(sf::Color(107, 107, 107));
 				break;
-			case 13:
-				if (!texture.loadFromFile("wrongbomb.png"))
-				{
-					std::cout << "Wrong";
-				}
-				rectangle.setTexture(&texture);
+			case 13: //Wrongly flagged bomb
+				rectangle.setTexture(&wrongbombTexture);
 				break;
-			case 14:
-				if (!texture.loadFromFile("actualbomb.png"))
-				{
-					std::cout << "Wrong";
-				}
-				rectangle.setTexture(&texture);
+			case 14: //Clicked bomb
+				rectangle.setTexture(&actualbombTexture);
 				break;
 			default:
 				break;
@@ -156,50 +140,41 @@ void GameView::draw(GameModel *gameModel)
 		}
 	}
 
-	beginner.setPosition(sf::Vector2f(gameModel->getLevelYSize() * 25 +25, 0));
-	beginner.setSize(sf::Vector2f(175, 50));
-	sf::Texture beginnerTexture;
-	beginnerTexture.loadFromFile("beginner.png");
-	beginner.setTexture(&beginnerTexture);
-	intermediate.setPosition(sf::Vector2f(gameModel->getLevelYSize() * 25 +25,50));
-	intermediate.setSize(sf::Vector2f(175, 50));
-	sf::Texture intermediateTexture;
-	intermediateTexture.loadFromFile("intermediate.png");
-	intermediate.setTexture(&intermediateTexture);
-	hard.setPosition(sf::Vector2f(gameModel->getLevelYSize() * 25 +25, 100));
-	hard.setSize(sf::Vector2f(175, 50));
-	sf::Texture hardTexture;
-	hardTexture.loadFromFile("hard.png");
-	hard.setTexture(&hardTexture);
+	beginner.setPosition(sf::Vector2f(gameModel->getLevelYSize() * 25.f +25, 0.f));
+	intermediate.setPosition(sf::Vector2f(gameModel->getLevelYSize() * 25.f +25,50.f));
+	hard.setPosition(sf::Vector2f(gameModel->getLevelYSize() * 25.f +25, 100.f));
 
-	leftBombsText.setFont(font);
-	leftBombsText.setPosition(gameModel->getLevelYSize() * 25 + 25, 150);
-
+	
+	leftBombsText.setPosition(gameModel->getLevelYSize() * 25.f + 25, 150.f);
 	std::string leftBombsString = "Mines: ";
-
 	leftBombsString = leftBombsString + std::to_string(gameModel->getNumberOfBombsToSign());
 	leftBombsText.setString(leftBombsString);
-	leftBombsText.setCharacterSize(18);
 
-	std::stringstream stream;
-	stream << std::fixed << std::setprecision(2) << gameModel->getTimer().getElapsedTime();
-	std::string s = stream.str();
+	std::stringstream timeStream;
+	timeStream << std::fixed << std::setprecision(2) << gameModel->getTimer().getElapsedTime();
+	std::string time = timeStream.str();
 
 	std::string timeString = "Time: ";
-	timeString = timeString + s;
+	timeString = timeString + time;
 	timeText.setString(timeString);
-	timeText.setPosition(gameModel->getLevelYSize() * 25 + 105, 150);
-	timeText.setCharacterSize(18);
+	timeText.setPosition(gameModel->getLevelYSize() * 25.f + 105, 150.f);
+	
 
 	if (gameModel->getPlayerState() == PlayerState::NOT_STARTED)
 	{
 		timeText.setString("Time: 0.00");
 	}
-	endText.setPosition(gameModel->getLevelYSize() * 25 + 50, 180);
-	endText.setCharacterSize(18);
 
+	endText.setPosition(gameModel->getLevelYSize() * 25.f + 60, 180.f);
 
-
+	if (gameModel->getConnection())
+	{
+		double score = gameModel->getHighscores()[gameModel->getHardness() - 1];
+		std::stringstream scoreStream;
+		scoreStream << "Best: " << std::fixed << std::setprecision(2) << score;
+		highScoreText.setString(scoreStream.str());
+		highScoreText.setPosition(gameModel->getLevelYSize() * 25.f + 60, 200.f);
+	}
 
 	switch (gameModel->getPlayerState())
 	{
@@ -220,8 +195,13 @@ void GameView::draw(GameModel *gameModel)
 	window->draw(intermediate);
 	window->draw(hard);
 	window->draw(leftBombsText);
-	window->draw(endText);
 	window->draw(timeText);
+	window->draw(endText);
+
+	if (gameModel->getConnection())
+	{
+		window->draw(highScoreText);
+	}
 
 	window->display();
 }

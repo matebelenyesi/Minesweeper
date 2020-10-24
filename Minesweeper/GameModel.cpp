@@ -10,8 +10,16 @@ int getRandomNumber(int min, int max)
 	return min + static_cast<int>((max - min + 1) * (std::rand() * fraction));
 }
 
-GameModel::GameModel()
+GameModel::GameModel(sql::Connection *con)
 {
+	connection = con;
+	if (connection)
+	{
+		highScores.push_back(getHighscore(1));
+		highScores.push_back(getHighscore(2));
+		highScores.push_back(getHighscore(3));
+	}
+
 	std::srand(static_cast<unsigned int>(std::time(nullptr)));
 
 	std::vector<int> startRow;
@@ -111,7 +119,7 @@ void GameModel::clickField(int x, int y)
 
 	if (playerState == PlayerState::NOT_STARTED)
 	{
-		int index = x * levelXSize + y;
+		int index = x * levelYSize + y;
 		freePositions.push_back(bombPositions[index]);
 		bombPositions.erase(bombPositions.begin() + index);
 
@@ -165,8 +173,8 @@ void GameModel::clickField(int x, int y)
 	bool won = true;
 	for (int i = 0; i < freePositions.size(); ++i)
 	{
-		x = std::get<0>(freePositions[i]);
-		y = std::get<1>(freePositions[i]);
+		int x = std::get<0>(freePositions[i]);
+		int y = std::get<1>(freePositions[i]);
 		won = won && level[x][y] <= 8;
 	}
 
@@ -175,12 +183,17 @@ void GameModel::clickField(int x, int y)
 		timer.pause();
 		for (int i = 0; i < bombPositions.size(); ++i)
 		{
-			x = std::get<0>(bombPositions[i]);
-			y = std::get<1>(bombPositions[i]);
+			int x = std::get<0>(bombPositions[i]);
+			int y = std::get<1>(bombPositions[i]);
 			level[x][y] = 9;
 		}
 		flagCount = bombCount;
 		playerState = PlayerState::WON;
+		if (connection)
+		{
+			updateHighscore(hardness, timer.getElapsedTime());
+			highScores[hardness - 1] = getHighscore(hardness);
+		}
 		wonSound.play();
 	}
 }
@@ -299,18 +312,21 @@ void GameModel::newGame(int x)
 		levelXSize = 9;
 		levelYSize = 9;
 		bombCount = 10;
+		hardness = 1;
 	}
 	else if (x == 1)
 	{
 		levelXSize = 16;
 		levelYSize = 16;
 		bombCount = 40;
+		hardness = 2;
 	}
 	else if (x == 2)
 	{
 		levelXSize = 16;
 		levelYSize = 30;
 		bombCount = 99;
+		hardness = 3;
 	}
 
 	level.clear();
@@ -338,6 +354,66 @@ void GameModel::newGame(int x)
 			std::tuple<int, int> tuple = std::make_tuple(i, j);
 			bombPositions.push_back(tuple);
 		}
+	}
+}
+
+std::vector<double> GameModel::getHighscores()
+{
+	return highScores;
+}
+
+int GameModel::getHardness()
+{
+	return hardness;
+}
+
+sql::Connection * GameModel::getConnection()
+{
+	return connection;
+}
+
+double GameModel::getHighscore(int level)
+{
+	sql::ResultSet *res;
+	sql::PreparedStatement *pstmt;
+
+	try
+	{
+		pstmt = connection->prepareStatement("SELECT score FROM Highscores WHERE id = ?");
+		pstmt->setInt(1, level);
+		res = pstmt->executeQuery();
+		res->next();
+		double returnValue = res->getDouble("score");
+		delete res;
+		delete pstmt;
+		return returnValue;
+	} 
+	catch (sql::SQLException &e)
+	{
+		std::cout << e.what()<<std::endl;
+	}
+}
+
+void GameModel::updateHighscore(int level, double score)
+{
+	sql::PreparedStatement *pstmt;
+
+	try
+	{
+		double current = getHighscore(level);
+		if (score < current)
+		{
+			pstmt = connection->prepareStatement("UPDATE Highscores SET score = ? WHERE id = ?");
+			pstmt->setDouble(1, score);
+			pstmt->setInt(2, level);
+			pstmt->executeQuery();
+			delete pstmt;
+		}
+
+	}
+	catch (sql::SQLException &e)
+	{
+		std::cout << e.what() << std::endl;
 	}
 }
 
