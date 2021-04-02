@@ -1,4 +1,3 @@
-#include "stdafx.h"
 #include "GameModel.h"
 #include <tuple>
 #include <iostream>
@@ -57,6 +56,8 @@ GameModel::GameModel(sql::Connection *con)
 	wonSound.setBuffer(wonSoundBuffer);
 	removeFlagSoundBuffer.loadFromFile("remove_flag.wav");
 	removeFlagSound.setBuffer(removeFlagSoundBuffer);
+	planSoundBuffer.loadFromFile("plan.wav");
+	planSound.setBuffer(planSoundBuffer);
 }
 
 Level GameModel::getLevel()
@@ -74,8 +75,21 @@ int GameModel::getLevelYSize()
 	return levelYSize;
 }
 
+void GameModel::click(int x, int y, void(GameModel::*mode)(int, int))
+{
+	clickCount = 0;
+	(this->*mode)(x, y);
+
+
+	if (clickCount >= 20 && playerState == PlayerState::IN_GAME)
+	{
+		planSound.play();
+	}
+}
+
 void GameModel::clickField(int x, int y)
 {
+	
 	if (y >= levelYSize+1)
 	{
 		newGame(x / 2);
@@ -86,6 +100,7 @@ void GameModel::clickField(int x, int y)
 		return;
 
 	clickSound.play();
+	clickCount++;
 
 	if (level[x][y] == 11)
 	{
@@ -161,6 +176,7 @@ void GameModel::clickField(int x, int y)
 
 	if (level[x][y] == 0)
 	{
+		
 		for (int i = x - 1; i <= x + 1; ++i)
 		{
 			for (int j = y - 1; j <= y + 1; ++j)
@@ -168,6 +184,7 @@ void GameModel::clickField(int x, int y)
 				clickField(i, j);
 			}
 		}
+		
 	}
 
 	bool won = true;

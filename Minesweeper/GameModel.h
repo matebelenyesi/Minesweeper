@@ -39,12 +39,16 @@ private:
 	sf::Sound wonSound;
 	sf::SoundBuffer removeFlagSoundBuffer;
 	sf::Sound removeFlagSound;
+	sf::SoundBuffer planSoundBuffer;
+	sf::Sound planSound;
 
 	sql::Connection *connection;
 	std::vector<double> highScores;
 
 	double getHighscore(int level);
 	void updateHighscore(int level, double score);
+
+	int clickCount = 0;
 
 
 public:
@@ -53,6 +57,8 @@ public:
 	Level getLevel();
 	int getLevelXSize();
 	int getLevelYSize();
+
+	void click(int x, int y, void(GameModel::*mode)(int, int));
 
 	void clickField(int x, int y);
 	void flagField(int x, int y);
